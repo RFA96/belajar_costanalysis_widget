@@ -33,15 +33,15 @@
 
         <div class="container-fluid">
             <div class="row" style="margin-top: 50px">
-                <div class="col-lg-6">
+                <div class="col-lg-8">
                     <div class="card">
                         <h5 class="card-header">ArcGIS Maps</h5>
                         <div class="card-body">
-                            <div id="maps" style="height: 500px"></div>
+                            <div id="maps" style="height: 700px"></div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-lg-4">
                     <div class="card">
                         <h5 class="card-header">Cost Table</h5>
                         <div class="card-body">
@@ -52,9 +52,17 @@
                                         <tr>
                                             <th>Valve Name</th>
                                             <th>Valve Type</th>
+                                            <th>Valve Code</th>
+                                            <th>Price</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="3" style="font-weight: bolder; text-align: right">Total Valve Price</td>
+                                            <td id="sumValvePrice"></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
 
@@ -66,11 +74,16 @@
                                         <tr>
                                             <th>Object Name</th>
                                             <th>Diameter (inch)</th>
+                                            <th>Price</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-
-                                    </tbody>
+                                    <tbody></tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2" style="font-weight: bolder; text-align: right">Total Pipe Price</td>
+                                            <td id="sumPipePrice"></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                         </div>

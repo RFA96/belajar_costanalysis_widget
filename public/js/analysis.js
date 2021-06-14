@@ -1,3 +1,6 @@
+let tableValve = $("#tbl_valve50k tbody");
+let tablePipe = $("#tbl_pipe50k tbody");
+
 function getValveType(valveCode) {
     if(valveCode === "BFV") {
         return "Butterfly Valve";
@@ -19,15 +22,77 @@ function getValveType(valveCode) {
         return "Pinch Valve";
     }
 }
+
+function countValvePrice(valveCode) {
+    let price;
+    $.ajax({
+        type: "GET",
+        url: "../fe_controllers/get_harga.php?item=valve",
+        dataType: "json",
+        async: false,
+        success: function (res_valve) {
+            let valvePrice = res_valve.valve_price;
+            for(let i = 0; i < valvePrice.length; i++) {
+                if(valvePrice[i].valve_type === valveCode) {
+                    price = valvePrice[i].price;
+                }
+            }
+        }
+    });
+    return price;
+}
+
+function countPipePrice(pipeDiameter) {
+    let price;
+    $.ajax({
+        type: "GET",
+        url: "../fe_controllers/get_harga.php?item=pipe",
+        dataType: "json",
+        async: false,
+        success: function (res_valve) {
+            let pipePrice = res_valve.pipe_price;
+            for(let i = 0; i < pipePrice.length; i++) {
+                if(parseInt(pipePrice[i].pipe_size_inch) === pipeDiameter) {
+                    price = pipePrice[i].price;
+                }
+            }
+        }
+    });
+    return price
+}
+
+function calculateTotalValvePrice() {
+    let totalValvePrice = 0;
+    tableValve.find('tr').each(function (i) {
+        let tds = $(this).find('td'),
+            priceValveTd = tds.eq(3).text();
+        totalValvePrice+=parseInt(priceValveTd)
+    });
+    $("#sumValvePrice").text(totalValvePrice);
+}
+
+function calculateTotalPipePrice() {
+    let totalValvePrice = 0;
+    tablePipe.find('tr').each(function (i) {
+        let tds = $(this).find('td'),
+            pricePipeTd = tds.eq(2).text();
+        totalValvePrice+=parseInt(pricePipeTd);
+    });
+
+    $("#sumPipePrice").text(totalValvePrice);
+}
+
 $(document).ready(function () {
     require([
         "esri/config",
         "esri/Map",
         "esri/views/MapView",
-        "esri/layers/FeatureLayer"
-    ], function (esriConfig, Map, MapView, FeatureLayer) {
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Editor",
+        "esri/WebMap"
+    ], function (esriConfig, Map, MapView, FeatureLayer, Editor, WebMap) {
         // generate from ArcGIS Developers Dashboard (using OAuth 2.0)
-        esriConfig.apiKey = "Toju940sXiU54SakMmiRKmO7B6dxo4xdvPXSV9Nqer0r9bGezYrHqUxj_fM83ynQ3d3cwkTClsOHm98OqkbzFo9EnQma-exYb9OS5CFu1omJ1VIkCjRtvhCrR3SWCbpCbvWPaSlr7TGZQG_08JLXXw..";
+        esriConfig.apiKey = "8VCijKH9S5gpp2CEWWI2YhmWX8pwEu3gxtwjkzHoOWJ4RbGB4nyUcdIceXJ--DSKtXf7gECxXWj_CwPFRP4PB0hIeepJFY3QWXNCZJ7-Ejt7tQax-roUZm36rI9e_IW7r-s5NbgVSqDylr3bD_HfNQ..";
 
         /*** Display each layer ***/
         const valve50kLayer = new FeatureLayer({
@@ -43,6 +108,12 @@ $(document).ready(function () {
             outFields: ["*"]
         });
 
+        const webMapPipaHidrokarbon50k = new WebMap({
+            portalItem: {
+                id: "365946eff1e04267b89c1ee1049ac48f"
+            }
+        });
+
         let pipaHidrokarbonMap = new Map({
             basemap: 'arcgis-colored-pencil',
             layers: [valve50kLayer, pipaHidrokarbon50kLayer, drillingSource50kLayer]
@@ -50,6 +121,7 @@ $(document).ready(function () {
 
         let view = new MapView({
             map: pipaHidrokarbonMap,
+            // map: webMapPipaHidrokarbon50k,
             container: 'maps',
             zoom: 4,
             center: [117.153709, -0.502106]
@@ -70,12 +142,16 @@ $(document).ready(function () {
                         valve50kGraphics = valve50kResults.features;
                         $("#tbl_valve50k tbody").empty();
                         valve50kGraphics.forEach(function (res, idx) {
+                            let newRowValveContent;
                             const attr = res.attributes;
                             const valveName = attr.Valve_Name;
                             const valveType = attr.Valve_Type;
-                            let newRowValveContent = "<tr><td>"+valveName+"</td><td>"+getValveType(valveType)+"</td></tr>";
+                            const valvePrice = countValvePrice(valveType);
+
+                            newRowValveContent = "<tr><td>"+valveName+"</td><td>"+getValveType(valveType)+"</td><td>"+valveType+"</td><td>"+valvePrice+"</td></tr>";
                             $("#tbl_valve50k tbody").append(newRowValveContent);
                         });
+                        calculateTotalValvePrice();
                     }).catch(function (err) {
                         console.error("Query failed: "+err);
                     });
@@ -98,8 +174,11 @@ $(document).ready(function () {
                             const attr = res.attributes;
                             const pipeNamaObjek = attr.NAMOBJ;
                             const pipeDiameter = attr.DIMMTR;
-                            let newRowPipeContent = "<tr><td>"+pipeNamaObjek+"</td><td>"+pipeDiameter+"</td></tr>";
+                            const pipeEachPrice = countPipePrice(pipeDiameter);
+                            console.log(pipeDiameter);
+                            let newRowPipeContent = "<tr><td>"+pipeNamaObjek+"</td><td>"+pipeDiameter+"</td><td>"+pipeEachPrice+"</td></tr>";
                             $("#tbl_pipe50k tbody").append(newRowPipeContent);
+                            calculateTotalPipePrice();
                         });
                     }).catch(function (err) {
                         console.error("Query failed: "+err);
@@ -107,5 +186,28 @@ $(document).ready(function () {
                 }
             });
         });
+
+        /*** Initiate Editor widget ***/
+        const editorWidget = new Editor({
+            view: view,
+            layerInfos: [
+                {
+                    layer: valve50kLayer,
+                    fieldConfig: [
+                        {name: "Valve_Name", label: "Valve Name"},
+                        {name: "Valve_Type", label: "Valve Type"}
+                    ]
+                },
+                {
+                    layer: pipaHidrokarbon50kLayer,
+                    fieldConfig: [
+                        {name: "NAMOBJ", label: "Nama Objek"},
+                        {name: "DIMMTR", label: "Diameter"},
+                        {name: "REMARK", label: "Remarks"}
+                    ]
+                }
+            ]
+        });
+        view.ui.add(editorWidget, "top-right");
     });
 });
